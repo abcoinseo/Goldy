@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Goldy</title>
+    <!-- Link to your existing CSS or a separate admin CSS -->
+    <link rel="stylesheet" href="admin_styles.css"> 
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+    <script src="admin.js"></script> <!-- Your admin JavaScript file -->
+    <style>
+        /* Basic admin panel styling */
+        body { font-family: 'Inter', sans-serif; background: var(--background); color: var(--text-color); margin: 0; padding: 0; display: flex; }
+        .sidebar { width: 250px; background: var(--card-bg); padding: 20px; border-right: 1px solid var(--border-color); box-shadow: var(--shadow-md); min-height: 100vh; }
+        .sidebar h2 { color: var(--primary-color); margin-bottom: 30px; text-align: center; }
+        .sidebar-menu a { display: block; padding: 12px 18px; margin-bottom: 8px; color: var(--text-secondary); text-decoration: none; border-radius: 8px; transition: all 0.3s ease; }
+        .sidebar-menu a:hover { background: var(--border-color); color: var(--text-color); }
+        .sidebar-menu a.active { background: var(--primary-gradient); color: white; }
+        .main-content { flex-grow: 1; padding: 40px; }
+        .admin-section { margin-bottom: 40px; background: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); }
+        .admin-section h3 { margin-top: 0; margin-bottom: 20px; color: var(--text-color); font-size: 1.5rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--border-color); font-weight: 600; }
+        .btn-admin { /* Similar styling to your existing buttons */ }
+        .btn-admin.delete { background: var(--error-color); color: white; }
+        .btn-admin.approve { background: var(--success-color); color: white; }
+        .login-form { max-width: 400px; margin: 50px auto; padding: 30px; background: var(--card-bg); border-radius: 20px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); text-align: center; }
+        .login-form input { width: 100%; padding: 14px; margin-bottom: 16px; border: 2px solid var(--border-color); border-radius: 12px; font-size: 1rem; }
+        .login-form button { width: 100%; padding: 14px; }
+        .loading-spinner { margin: 30px auto; }
+    </style>
+</head>
+<body>
+    
+    <!-- Login Form (initially shown) -->
+    <div id="loginContainer" class="login-form">
+        <h2>Admin Login</h2>
+        <input type="email" id="adminEmail" placeholder="Email">
+        <input type="password" id="adminPassword" placeholder="Password">
+        <button id="loginButton" class="btn btn-primary">Login</button>
+        <p id="loginError" style="color: var(--error-color); margin-top: 10px; display: none;"></p>
+    </div>
+
+    <!-- Admin Panel (hidden initially, shown after login) -->
+    <div id="adminPanel" style="display: none;">
+        <div class="sidebar">
+            <h2>Goldy Admin</h2>
+            <nav class="sidebar-menu">
+                <a href="#" data-section="dashboard" class="active">Dashboard</a>
+                <a href="#" data-section="users">Manage Users</a>
+                <a href="#" data-section="tasks">Manage Tasks</a>
+                <a href="#" data-section="withdrawals">Withdrawals</a>
+                <a href="#" id="logoutButton">Logout</a>
+            </nav>
+        </div>
+        <div class="main-content">
+            <div id="dashboard" class="admin-section">
+                <h3>Overview</h3>
+                <p>Total Users: <span id="totalUsersStat">Loading...</span></p>
+                <p>Total Tasks: <span id="totalTasksStat">Loading...</span></p>
+                <p>Total TON Earned: <span id="totalEarnedStat">Loading...</span></p>
+                <p>Pending Withdrawals: <span id="pendingWithdrawalsStat">Loading...</span></p>
+            </div>
+
+            <div id="users" class="admin-section" style="display: none;">
+                <h3>Manage Users</h3>
+                <div id="userListSpinner" class="loading-spinner"></div>
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Balance</th>
+                            <th>Tasks Created</th>
+                            <th>Tasks Completed</th>
+                            <th>Total Earned</th>
+                            <th>Ads Watched</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- User data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="tasks" class="admin-section" style="display: none;">
+                <h3>Manage Tasks</h3>
+                <div id="taskListSpinner" class="loading-spinner"></div>
+                <table id="tasksTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Created By</th>
+                            <th>Impressions</th>
+                            <th>Completed</th>
+                            <th>Cost (TON)</th>
+                            <th>Reward (TON)</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTableBody">
+                        <!-- Task data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="withdrawals" class="admin-section" style="display: none;">
+                <h3>Manage Withdrawals</h3>
+                <div id="withdrawalListSpinner" class="loading-spinner"></div>
+                <table id="withdrawalsTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Address</th>
+                            <th>Amount (TON)</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawalsTableBody">
+                        <!-- Withdrawal data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config - REPLACE WITH YOUR ACTUAL CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyALimg_uEpUVKovGrScsAvva59R_JsUEB0",
+            authDomain: "goldy-64176.firebaseapp.com",
+            projectId: "goldy-64176",
+            storageBucket: "goldy-64176.firebasestorage.app",
+            messagingSenderId: "103789370701",
+            appId: "1:103789370701:web:41fbd522b0edb0d24bab04"
+        };
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.getAuth(app);
+        const database = firebase.getDatabase(app);
+        const adminEmail = "Hutahuv@gmail.com"; // Example admin email
+        const adminPassword = "Swopnil9738";    // Example admin password (NEVER DO THIS IN PRODUCTION)
+
+        const loginContainer = document.getElementById('loginContainer');
+        const adminPanel = document.getElementById('adminPanel');
+        const loginButton = document.getElementById('loginButton');
+        const adminEmailInput = document.getElementById('adminEmail');
+        const adminPasswordInput = document.getElementById('adminPassword');
+        const loginError = document.getElementById('loginError');
+        
+        const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
+        const sections = document.querySelectorAll('.admin-section');
+
+        // --- Admin Authentication (VERY INSECURE FOR PRODUCTION) ---
+        // In a real app, you'd use Firebase Auth with email/password for admins
+        // and store admin status in user profiles, or use a dedicated backend.
+        
+        loginButton.addEventListener('click', async () => {
+            const email = adminEmailInput.value;
+            const password = adminPasswordInput.value;
+
+            // !!! THIS IS HIGHLY INSECURE !!!
+            // DO NOT use hardcoded credentials in production.
+            // Use Firebase Authentication or a secure backend login.
+            if (email === adminEmail && password === adminPassword) {
+                loginError.style.display = 'none';
+                loginContainer.style.display = 'none';
+                adminPanel.style.display = 'flex';
+                await loadDashboardData(); // Load data after login
+                showSection('dashboard'); // Show dashboard by default
+            } else {
+                loginError.textContent = 'Invalid email or password.';
+                loginError.style.display = 'block';
+            }
+        });
+
+        // --- Section Navigation ---
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                sidebarLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                const sectionId = link.getAttribute('data-section');
+                showSection(sectionId);
+                // Load data for the selected section if it's not already loaded
+                if (sectionId === 'users') loadUserDataForAdmin();
+                if (sectionId === 'tasks') loadTasksDataForAdmin();
+                if (sectionId === 'withdrawals') loadWithdrawalsDataForAdmin();
+            });
+        });
+
+        function showSection(sectionId) {
+            sections.forEach(section => section.style.display = 'none');
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        // --- Data Loading Functions (Conceptual - requires Firebase Admin SDK for real security) ---
+
+        async function loadDashboardData() {
+            try {
+                // In a real admin panel, these would be fetched securely via API calls to your backend,
+                // or by using the Firebase Admin SDK from Cloud Functions.
+                // For demonstration, we'll fetch directly (less secure for production).
+
+                const usersSnapshot = await firebase.get(firebase.ref(database, 'users'));
+                const usersData = usersSnapshot.val() || {};
+                const totalUsers = Object.keys(usersData).length;
+                
+                const tasksSnapshot = await firebase.get(firebase.ref(database, 'tasks'));
+                const tasksData = tasksSnapshot.val() || {};
+                const totalTasks = Object.keys(tasksData).filter(key => tasksData[key].status === 'active').length;
+
+                let totalEarned = 0;
+                for (const userId in usersData) {
+                    totalEarned += usersData[userId].stats?.totalEarnings || 0;
+                }
+
+                const withdrawalsSnapshot = await firebase.get(firebase.ref(database, 'withdrawals'));
+                const withdrawalsData = withdrawalsSnapshot.val() || {};
+                const pendingWithdrawals = Object.values(withdrawalsData).filter(w => w.status === 'pending').length;
+
+                document.getElementById('totalUsersStat').textContent = totalUsers;
+                document.getElementById('totalTasksStat').textContent = totalTasks;
+                document.getElementById('totalEarnedStat').textContent = totalEarned.toFixed(5);
+                document.getElementById('pendingWithdrawalsStat').textContent = pendingWithdrawals;
+
+            } catch (error) {
+                console.error("Error loading dashboard data:", error);
+                alert("Failed to load dashboard data.");
+            }
+        }
+        
+        async function loadUserDataForAdmin() {
+            const tableBody = document.getElementById('usersTableBody');
+            const spinner = document.getElementById('userListSpinner');
+            spinner.style.display = 'block';
+            tableBody.innerHTML = '';
+
+            try {
+                const snapshot = await firebase.get(firebase.ref(database, 'users'));
+                const data = snapshot.val() || {};
+
+                for (const userId in data) {
+                    const user = data[userId];
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${userId}</td>
+                        <td>${user.name || 'N/A'}</td>
+                        <td>${(user.balance || 0).toFixed(5)} TON</td>
+                        <td>${user.stats?.tasksCreated || 0}</td>
+                        <td>${user.stats?.tasksCompleted || 0}</td>
+                        <td>${(user.stats?.totalEarnings || 0).toFixed(5)} TON</td>
+                        <td>${user.stats?.adsWatched || 0}</td>
+                        <td>
+                            <button class="btn btn-admin" onclick="editUser('${userId}')">Edit</button>
+                            <button class="btn btn-admin delete" onclick="deleteUser('${userId}')">Delete</button>
+                        </td>
+                    `;
+                }
+            } catch (error) {
+                console.error("Error loading users:", error);
+                tableBody.innerHTML = '<tr><td colspan="8">Error loading users.</td></tr>';
+            } finally {
+                spinner.style.display = 'none';
+            }
+        }
+        
+        async function loadTasksDataForAdmin() {
+            const tableBody = document.getElementById('tasksTableBody');
+            const spinner = document.getElementById('taskListSpinner');
+            spinner.style.display = 'block';
+            tableBody.innerHTML = '';
+
+            try {
+                const snapshot = await firebase.get(firebase.ref(database, 'tasks'));
+                const data = snapshot.val() || {};
+
+                for (const taskId in data) {
+                    const task = data[taskId];
+                    const row = tableBody.insertRow();
+                    const completedCount = task.completedBy ? task.completedBy.length : 0;
+                    const progress = task.totalImpressions > 0 ? (task.currentImpressions / task.totalImpressions) * 100 : 0;
+                    
+                    row.innerHTML = `
+                        <td>${taskId}</td>
+                        <td>${task.title}</td>
+                        <td>${task.createdBy || 'N/A'}</td>
+                        <td>${task.currentImpressions}/${task.totalImpressions} (${progress.toFixed(1)}%)</td>
+                        <td>${completedCount}</td>
+                        <td>${task.costInTON ? task.costInTON.toFixed(3) : '0.000'}</td>
+                        <td>${task.rewardPerCompletion ? task.rewardPerCompletion.toFixed(5) : '0.00000'}</td>
+                        <td>${task.status}</td>
+                        <td>
+                            <button class="btn btn-admin" onclick="viewTaskDetails('${taskId}')">View</button>
+                            <button class="btn btn-admin delete" onclick="deleteTaskAdmin('${taskId}')">Delete</button>
+                        </td>
+                    `;
+                }
+            } catch (error) {
+                console.error("Error loading tasks:", error);
+                tableBody.innerHTML = '<tr><td colspan="9">Error loading tasks.</td></tr>';
+            } finally {
+                spinner.style.display = 'none';
+            }
+        }
+        
+        async function loadWithdrawalsDataForAdmin() {
+            const tableBody = document.getElementById('withdrawalsTableBody');
+            const spinner = document.getElementById('withdrawalListSpinner');
+            spinner.style.display = 'block';
+            tableBody.innerHTML = '';
+
+            try {
+                const snapshot = await firebase.get(firebase.ref(database, 'withdrawals'));
+                const data = snapshot.val() || {};
+
+                for (const withdrawalId in data) {
+                    const withdrawal = data[withdrawalId];
+                    const row = tableBody.insertRow();
+                    row.innerHTML = `
+                        <td>${withdrawal.userName || withdrawal.userId}</td>
+                        <td>${withdrawal.address}</td>
+                        <td>${withdrawal.amount.toFixed(5)} TON</td>
+                        <td>${withdrawal.status}</td>
+                        <td>${new Date(withdrawal.createdAt).toLocaleString()}</td>
+                        <td>
+                            <button class="btn btn-admin approve" onclick="approveWithdrawal('${withdrawalId}', '${withdrawal.userId}', ${withdrawal.amount})">Approve</button>
+                            <button class="btn btn-admin delete" onclick="rejectWithdrawal('${withdrawalId}')">Reject</button>
+                        </td>
+                    `;
+                }
+            } catch (error) {
+                console.error("Error loading withdrawals:", error);
+                tableBody.innerHTML = '<tr><td colspan="6">Error loading withdrawals.</td></tr>';
+            } finally {
+                spinner.style.display = 'none';
+            }
+        }
+
+        // --- Admin Actions (Conceptual - requires Cloud Functions for security) ---
+
+        // These functions would typically call Cloud Functions to perform actions.
+        // Directly modifying data here is UNSAFE.
+
+        async function deleteUser(userId) {
+            if (confirm(`Are you sure you want to delete user ${userId}? This action is irreversible.`)) {
+                // In a real app: Call a Cloud Function to delete user and their data.
+                console.log(`DELETE USER: ${userId} (Simulated)`);
+                alert("Deleting user is simulated. Requires backend implementation.");
+                // Example (if using Admin SDK in a function):
+                // await firebase.functions().httpsCallable('deleteUser')({ userId: userId });
+                await loadUserDataForAdmin(); // Reload list
+            }
+        }
+        
+        function editUser(userId) {
+            alert(`Editing user ${userId} is not implemented.`);
+        }
+
+        async function deleteTaskAdmin(taskId) {
+            if (confirm(`Are you sure you want to delete task ${taskId}? This action is irreversible.`)) {
+                // In a real app: Call a Cloud Function to delete task.
+                console.log(`DELETE TASK: ${taskId} (Simulated)`);
+                alert("Deleting task is simulated. Requires backend implementation.");
+                await loadTasksDataForAdmin(); // Reload list
+            }
+        }
+        
+        function viewTaskDetails(taskId) {
+            alert(`Viewing details for task ${taskId} is not implemented.`);
+        }
+        
+        async function approveWithdrawal(withdrawalId, userId, amount) {
+            if (confirm(`Approve withdrawal for user ${userId} for ${amount.toFixed(5)} TON?`)) {
+                // In a real app: Call a Cloud Function to approve and potentially send TON.
+                console.log(`APPROVE WITHDRAWAL: ${withdrawalId} for user ${userId} (Simulated)`);
+                alert("Approving withdrawal is simulated. Requires backend implementation (including TON transaction).");
+                // Example: Call a Cloud Function that updates withdrawal status, decrements user balance, and sends TON.
+                // await firebase.functions().httpsCallable('processWithdrawal')({ withdrawalId, status: 'approved' });
+                await loadWithdrawalsDataForAdmin(); // Reload list
+            }
+        }
+        
+        async function rejectWithdrawal(withdrawalId) {
+             if (confirm(`Reject withdrawal ${withdrawalId}?`)) {
+                // In a real app: Call a Cloud Function to reject.
+                console.log(`REJECT WITHDRAWAL: ${withdrawalId} (Simulated)`);
+                alert("Rejecting withdrawal is simulated. Requires backend implementation.");
+                 // Example: Call a Cloud Function that updates withdrawal status to 'rejected'.
+                // await firebase.functions().httpsCallable('processWithdrawal')({ withdrawalId, status: 'rejected' });
+                await loadWithdrawalsDataForAdmin(); // Reload list
+            }
+        }
+
+        // --- Logout ---
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            // In a real app, you'd sign out the admin user using firebase.auth().signOut()
+            // and then show the login form again.
+            alert("Logout simulated. Returning to login screen.");
+            adminPanel.style.display = 'none';
+            loginContainer.style.display = 'block';
+            loginError.style.display = 'none';
+            // Optionally clear form fields
+            adminEmailInput.value = '';
+            adminPasswordInput.value = '';
+        });
+
+        // Initial load (if already logged in, which isn't handled securely here)
+        // Ideally, check auth state on page load
+        
+    </script>
+</body>
+</html>

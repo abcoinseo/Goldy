@@ -1745,14 +1745,16 @@
 
     <script>
         // Firebase configuration
-          const firebaseConfig = {
-  apiKey: "AIzaSyALimg_uEpUVKovGrScsAvva59R_JsUEB0",
-  authDomain: "goldy-64176.firebaseapp.com",
-  projectId: "goldy-64176",
-  storageBucket: "goldy-64176.firebasestorage.app",
-  messagingSenderId: "103789370701",
-  appId: "1:103789370701:web:41fbd522b0edb0d24bab04"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3SqCHzN3kLj7DC8Cyu9OzxPFtIlyyii4",
+            authDomain: "maneybux-clone.firebaseapp.com",
+            databaseURL: "https://maneybux-clone-default-rtdb.firebaseio.com", // Added databaseURL
+            projectId: "maneybux-clone",
+            storageBucket: "maneybux-clone.firebasestorage.app",
+            messagingSenderId: "153207109623",
+            appId: "1:153207109623:web:4cd48633c49c2ba3c1a0f2"
+        };
+
         // Initialize Firebase
         try {
             firebase.initializeApp(firebaseConfig);
@@ -1790,16 +1792,17 @@
         // Constants
         const REFERRAL_BONUS_POINTS_PER_EARNING = 0.20; // 20% of user's earning from tasks
         const MIN_WITHDRAW_TON = 0.1;
-        const POINTS_TO_TON_RATE = 0.0001; // Example: 100 points = 0.00078 TON
+        const POINTS_TO_TON_RATE = 0.00078; // Example: 100 points = 0.00078 TON (adjusted for realistic value)
         const IMPRESSIONS_TO_TON_RATE = 0.0015; // 1.5 TON per 1000 impressions = 0.0015 TON per impression
         const AD_REWARD_POINTS = 15;
         const CHECKIN_REWARD_POINTS = 20;
         const TASK_SPIN_REWARD = 1;
-        const TELEGRAM_BOT_TOKEN = '8497542140:AAGWqREeo9HZke89oFWszkZnQwu4zDYsBIY'; // Replace with your actual bot token
+        const TELEGRAM_BOT_TOKEN = '8497542140:AAGWqREeo9HZke89oFWszkZnQwu4zDYsBIY'; // Replaced with your actual bot token
         const AD_WATCH_DURATION = 15000; // 15 seconds for ad watch time
-        const AD_CLAIM_COOLDOWN = 15000;  // 3 seconds cooldown after ad completion before reward is claimable/button active
+        const AD_CLAIM_COOLDOWN = 3000;  // 3 seconds cooldown after ad completion before reward is claimable/button active
         const POST_AD_COOLDOWN = 3000;   // 3 seconds delay between claiming reward and being able to start the *next* ad
         const MAX_DAILY_ADS = 50;
+        const TON_RECEIVER_ADDRESS = 'UQDIdqf1JI1mC0WmFw5yq5Qdqzop3a-aWiu34HnYoVeEIGzk'; // Replaced with your actual TON address
 
         // --- User Status Management ---
         async function checkAndApplyUserStatus() {
@@ -2699,7 +2702,7 @@
             adVerificationMessage.textContent = '';
             adVerificationMessage.style.display = 'none';
             watchAdButton.style.display = 'flex';
-            watchAdButton.innerHTML = '<span class="material-icons">play_arrow</span> Watch Ad (+10 Diamond)';
+            watchAdButton.innerHTML = '<span class="material-icons">play_arrow</span> Watch Ad (+15 Diamond)';
             watchAdButton.disabled = false;
             watchAdButton.classList.add('pulse', 'glow');
 
@@ -2953,7 +2956,7 @@
                 const transaction = {
                     validUntil: Math.floor(Date.now() / 1000) + 300, 
                     messages: [{
-                        address: "UQDLsNfQBwWXD9aaNxNS3udGo-9o8ybrlKmmbI5gjjRfs17M", // Replace with your actual TON wallet address for receiving funds
+                        address: TON_RECEIVER_ADDRESS, // Replace with your actual TON wallet address for receiving funds
                         amount: Math.floor(cost * 1e9).toString() 
                     }]
                 };

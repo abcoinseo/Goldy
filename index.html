@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-    <script src='//libtl.com/sdk.js' data-zone='9809601' data-sdk='show_9809601'></script>
+    <script src='//libtl.com/sdk.js' data-zone='9842813' data-sdk='show_9842813'></script>
     <style>
         * {
             margin: 0;
@@ -1970,7 +1970,7 @@
                 return;
             }
 
-            if (typeof show_9809601 !== 'function') {
+            if (typeof show_9842813 !== 'function') {
                 showAlert('Ad service is not available. Please try again later.', 'danger');
                 return;
             }
@@ -1983,7 +1983,7 @@
             startAdCountdownTimer();
             
             try {
-                show_9809601();
+                show_9842813();
                 console.log('Ad display initiated');
             } catch (error) {
                 console.error('Error showing ad:', error);

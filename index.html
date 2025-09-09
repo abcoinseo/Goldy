@@ -1880,7 +1880,7 @@
                     <label class="form-label">Amount (TON)</label>
                     <input type="number" class="form-input" id="withdrawAmount" min="0.1" step="0.00000001" required placeholder="Enter TON amount to withdraw">
                     <div style="font-size: 12px; color: var(--text-light); margin-top: 5px;">
-                        Minimum: 0.1 TON | Your TON Balance: <span id="withdrawModalTonBalance">0.00000000</span> TON
+                        Minimum: 0.01 TON | Your TON Balance: <span id="withdrawModalTonBalance">0.00000000</span> TON
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary" id="requestWithdrawButton">
@@ -1940,7 +1940,7 @@
         let adCooldownTimer = null;
         let lastAdWatchTime = 0;
 
-        const MIN_WITHDRAW_TON = 0.1;
+        const MIN_WITHDRAW_TON = 0.01;
         const POINTS_TO_TON_RATE = 0.00001;
         const IMPRESSIONS_TO_TON_RATE = 0.0015;
         const AD_REWARD_POINTS = 15;
